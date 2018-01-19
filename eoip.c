@@ -17,11 +17,12 @@
 #include <errno.h>
 
 #include "eoip.h"
+#include "socket.h"
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define GRE_MAGIC "\x20\x01\x64\x00"
 #define EIPHEAD(tid) 0x3000 | tid
-#define BITSWAP(c) ((c & 0xf0) >> 4) | ((c & 0x0f) << 4);
+#define BITSWAP(c) (((c & 0xf0) >> 4) | ((c & 0x0f) << 4))
 
 union packet {
   uint16_t header;
@@ -113,20 +114,7 @@ int main (int argc, char** argv) {
     exit(errno);
   }
 
-  int tap_fd = open("/dev/net/tun", O_RDWR);
-  struct ifreq ifr;
-  memset(&ifr, 0, sizeof(ifr));
-  strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
-  ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
-  if(ioctl(tap_fd, TUNSETIFF, (void *) &ifr)) {
-    fprintf(stderr, "[ERR] can't TUNSETIFF: %s.\n", strerror(errno));
-    exit(errno);
-  }
-
-  ifr.ifr_mtu = mtu;
-
-  if (ioctl(socket(AF_INET, SOCK_STREAM, IPPROTO_IP), SIOCSIFMTU, (void *)&ifr) < 0)
-    fprintf(stderr, "[WARN] can't SIOCSIFMTU (%s), please set MTU of %s to %d manually.\n", strerror(errno), ifr.ifr_name, ifr.ifr_mtu);
+  int tap_fd = open_tap(ifname, mtu);
 
   FD_ZERO(&fds);
 

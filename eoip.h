@@ -1,5 +1,7 @@
 #include <stdint.h>
 
+const in_port_t EOIP_PROTO = 47;
+
 struct eoip_pkt_t {
     uint8_t  magic[4];
     uint16_t len;
