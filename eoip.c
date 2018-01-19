@@ -31,7 +31,7 @@ union packet {
   struct eoip6_pkt_t eoip6;
 };
 
-void populate_sockaddr(int af, int port, char addr[],
+void populate_sockaddr(sa_family_t af, in_port_t port, char addr[],
   struct sockaddr_storage *dst, socklen_t *addrlen) {
   // from https://stackoverflow.com/questions/48328708/, many thanks.
   if (af == AF_INET) {
@@ -55,7 +55,11 @@ int main (int argc, char** argv) {
   fd_set fds;
   char src[INET6_ADDRSTRLEN], dst[INET6_ADDRSTRLEN], ifname[IFNAMSIZ];
   unsigned char *buffer;
-  unsigned int tid, ptid, len, mtu = 1500, af = AF_INET, proto = 47, daemon = 0;
+  unsigned int ptid, mtu = 1500, daemon = 0;
+  sa_family_t af = AF_INET;
+  in_port_t proto = EOIP_PROTO;
+  uint16_t tid;
+  ssize_t len;
   uid_t uid = 0;
   gid_t gid = 0;
   pid_t pid = 1;
@@ -134,8 +138,8 @@ int main (int argc, char** argv) {
 
   struct eoip_pkt_t eoip_hdr;
 
-  eoip6_hdr.header = htons(EIPHEAD(tid));
-  eoip6_hdr.eoip6.head_p1 = BITSWAP(eoip6_hdr.eoip6.head_p1);
+  eoip6_hdr.header = htons((uint16_t) (EIPHEAD(tid)));
+  eoip6_hdr.eoip6.head_p1 = (uint8_t) (BITSWAP(eoip6_hdr.eoip6.head_p1));
 
   eoip_hdr.tid = tid;
   memcpy(&eoip_hdr.magic, GRE_MAGIC, 4);
@@ -163,13 +167,13 @@ int main (int argc, char** argv) {
         if (af == AF_INET) {
           len = read(tap_fd, packet.eoip.payload, sizeof(packet));
           memcpy(packet.eoip.magic, &eoip_hdr, 8);
-          packet.eoip.len = htons(len);
+          packet.eoip.len = htons((uint16_t) len);
           len += 8;
         } else {
           len = read(tap_fd, packet.eoip6.payload, sizeof(packet)) + 2;
           memcpy(&packet.header, &eoip6_hdr.header, 2);
         }
-        sendto(sock_fd, packet.buffer, len, 0, (struct sockaddr*) &raddr, raddrlen);
+        sendto(sock_fd, packet.buffer, (size_t) len, 0, (struct sockaddr*) &raddr, raddrlen);
       } while (1);
     }
     if (!writer) { // we are writer
@@ -192,7 +196,7 @@ int main (int argc, char** argv) {
           len -= 2;
         }
         if(len <= 0) continue;
-        write(tap_fd, buffer, len);
+        write(tap_fd, buffer, (size_t) len);
       } while (1);
     }
   } while(1);
