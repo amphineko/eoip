@@ -1,25 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
 
-#include <sys/ioctl.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 
-#include <linux/if.h>
-#include <linux/if_tun.h>
 
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <net/if.h>
 
 #include "eoip.h"
 #include "tap.h"
+#include "socket.h"
 
-#define MAX(a,b) (((a)>(b))?(a):(b))
 #define GRE_MAGIC "\x20\x01\x64\x00"
 #define EIPHEAD(tid) 0x3000 | tid
 #define BITSWAP(c) (((c & 0xf0) >> 4) | ((c & 0x0f) << 4))
@@ -102,19 +98,16 @@ int main (int argc, char** argv) {
     }
   }
 
-  int sock_fd = socket(af, SOCK_RAW, proto);
+
 
   struct sockaddr_storage laddr, raddr;
   socklen_t laddrlen, raddrlen;
   populate_sockaddr(af, proto, src, &laddr, &laddrlen);
   populate_sockaddr(af, proto, dst, &raddr, &raddrlen);
 
-  if (bind(sock_fd, (struct sockaddr*) &laddr, laddrlen) < 0) {
-    fprintf(stderr, "[ERR] can't bind socket: %s.\n", strerror(errno));
-    exit(errno);
-  }
+  int sock_fd = socket_open(af, proto, laddr, laddrlen);
 
-  int tap_fd = open_tap(ifname, mtu);
+  int tap_fd = tap_open(ifname, mtu);
 
   FD_ZERO(&fds);
 

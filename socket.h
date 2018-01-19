@@ -1,4 +1,9 @@
-#ifndef EOIP_SOCKET_H
-#define EOIP_SOCKET_H
+#ifndef EOIP_SOCKET_H_
+#define EOIP_SOCKET_H_
 
-#endif //EOIP_SOCKET_H
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+int socket_open(sa_family_t af, in_port_t proto, const struct sockaddr *addr, socklen_t addr_len);
+
+#endif //EOIP_SOCKET_H_

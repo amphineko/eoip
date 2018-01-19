@@ -9,7 +9,7 @@
 #include <netinet/in.h>
 #include <net/if.h>
 
-int open_tap(const char *if_name, int mtu) {
+int tap_open(const char *if_name, int mtu) {
     int tap_fd = open("/dev/net/tun", O_RDWR);
     struct ifreq ifr;
 
