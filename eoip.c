@@ -17,7 +17,7 @@
 #include <errno.h>
 
 #include "eoip.h"
-#include "socket.h"
+#include "tap.h"
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define GRE_MAGIC "\x20\x01\x64\x00"
