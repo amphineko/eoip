@@ -16,35 +16,19 @@
 #include <arpa/inet.h>
 #include <errno.h>
 
+#include "eoip.h"
+
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define GRE_MAGIC "\x20\x01\x64\x00"
 #define EIPHEAD(tid) 0x3000 | tid
 #define BITSWAP(c) ((c & 0xf0) >> 4) | ((c & 0x0f) << 4);
 
-struct eoip6_packet {
-  uint8_t head_p1;
-  uint8_t head_p2;
-  uint8_t payload[0];
-};
-
-struct eoip_packet {
-  uint8_t  magic[4];
-  uint16_t len;
-  uint16_t tid;
-  uint8_t  payload[0];
-};
-
 union packet {
   uint16_t header;
   uint8_t  buffer[65536];
   struct iphdr ip;
-  struct eoip_packet eoip;
-  struct eoip6_packet eoip6;
-};
-
-union eoip6_hdr {
-  struct   eoip6_packet eoip6;
-  uint16_t header;
+  struct eoip_pkt_t eoip;
+  struct eoip6_pkt_t eoip6;
 };
 
 void populate_sockaddr(int af, int port, char addr[],
@@ -146,9 +130,9 @@ int main (int argc, char** argv) {
   if (gid > 0) setgid(gid);
 
   union packet packet;
-  union eoip6_hdr eoip6_hdr;
+  union eoip6_unified eoip6_hdr;
 
-  struct eoip_packet eoip_hdr;
+  struct eoip_pkt_t eoip_hdr;
 
   eoip6_hdr.header = htons(EIPHEAD(tid));
   eoip6_hdr.eoip6.head_p1 = BITSWAP(eoip6_hdr.eoip6.head_p1);
